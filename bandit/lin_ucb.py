@@ -7,12 +7,21 @@ from .bandit_base.contextual_bandit import ContextualBanditBase
 
 
 class LinUCB(ContextualBanditBase):
-    def prior_parameter(self) -> dict[str, Any]:
-        """初期パラメーター
+    def __init__(
+        self,
+        arm_ids: list[str],
+        context_features: list[str],
+        intercept: bool = True,
+        alpha: float = 1,
+        initial_parameter: Optional[dict[str, Any]] = None,
+    ) -> None:
+        self.alpha = alpha
+        super().__init__(arm_ids, context_features, intercept, initial_parameter)
 
-        Returns:
-            dict[str, Any]: 初期パラメータ
-        """
+    def common_parameter(self) -> dict[str, Any]:
+        return {}
+
+    def arm_parameter(self) -> dict[str, Any]:
         dim = len(self.context_features) + int(self.intercept)
         A = np.eye(dim)
         b = np.zeros(dim)
@@ -58,7 +67,6 @@ class LinUCB(ContextualBanditBase):
         Returns:
             str: 腕ID
         """
-        alpha = 1
         x_transform = self.context_transform(x)
         if self.intercept:
             x_transform = np.concatenate([x_transform, [1]])
@@ -66,7 +74,8 @@ class LinUCB(ContextualBanditBase):
         index = np.argmax(
             [
                 (x_transform @ params[arm_id]["theta"])
-                + alpha * np.sqrt(x_transform @ (params[arm_id]["Ainv"] @ x_transform))
+                + self.alpha
+                * np.sqrt(x_transform @ (params[arm_id]["Ainv"] @ x_transform))
                 for arm_id in self.arm_ids
             ]
         )

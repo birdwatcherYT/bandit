@@ -13,7 +13,7 @@ from bandit.bandit_base.bandit import BanditBase
 
 def get_batch(
     bandit: BanditBase,
-    truth_prob: list[dict[str, float]],
+    true_prob: list[dict[str, float]],
     centroid: np.ndarray,
     features: list[str],
     batch_size: int = 100,
@@ -24,12 +24,12 @@ def get_batch(
         x = np.random.rand(len(features))
         arm_id = bandit.select_arm(x)
         cluster = np.argmin(np.linalg.norm(centroid - x, axis=1))
-        maxprob = max(truth_prob[cluster].values())
+        maxprob = max(true_prob[cluster].values())
         log.append(
             {
                 "arm_id": arm_id,
-                "reward": np.random.binomial(1, truth_prob[cluster][arm_id]),
-                "regret": maxprob - truth_prob[cluster][arm_id],
+                "reward": np.random.binomial(1, true_prob[cluster][arm_id]),
+                "regret": maxprob - true_prob[cluster][arm_id],
             }
             | dict(zip(features, x))
         )
@@ -44,13 +44,13 @@ intercept = True
 onehot_maxprob = 0.7
 onehot_minprob = 0.3
 # onehot = True
-onehot=False
+onehot = False
 
 cluster_num = arm_num if onehot else 4
 arm_ids = [f"arm{i}" for i in range(arm_num)]
 features = [f"feat{i}" for i in range(feature_num)]
 centroid = np.array([np.random.rand(feature_num) for i in range(cluster_num)])
-truth_prob = [
+true_prob = [
     {
         a: (onehot_maxprob if (k == i) else onehot_minprob)
         if onehot
@@ -59,14 +59,14 @@ truth_prob = [
     }
     for i in range(cluster_num)
 ]
-print(truth_prob)
+print(true_prob)
 
 report = {}
 for bandit in [
     LogisticTS(arm_ids, features, intercept),
-    LogisticPGTS(arm_ids, features, intercept),
+    LogisticPGTS(arm_ids, features, intercept, M=10),
     LinTS(arm_ids, features, intercept),
-    LinUCB(arm_ids, features, intercept),
+    LinUCB(arm_ids, features, intercept, alpha=1),
     TSBinaryBandit(arm_ids),
 ]:
     name = bandit.__class__.__name__
@@ -74,7 +74,7 @@ for bandit in [
     regret_log = []
     cumsum_regret = 0
     for i in tqdm(range(100)):
-        reward_df = get_batch(bandit, truth_prob, centroid, features)
+        reward_df = get_batch(bandit, true_prob, centroid, features)
         cumsum_regret += reward_df["regret"].sum()
         regret_log.append(cumsum_regret)
         bandit.train(reward_df)

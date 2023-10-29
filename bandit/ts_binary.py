@@ -7,7 +7,10 @@ from .bandit_base.bandit import BanditBase
 
 
 class TSBinaryBandit(BanditBase):
-    def prior_parameter(self) -> dict[str, Any]:
+    def common_parameter(self) -> dict[str, Any]:
+        return {}
+
+    def arm_parameter(self) -> dict[str, Any]:
         """beta分布のパラメータ Beta(theta|alpha, beta)=theta^{alpha-1}(1-theta)^{beta-1}/B(alpha, beta)
 
         Returns:
@@ -19,7 +22,7 @@ class TSBinaryBandit(BanditBase):
         """パラメータの更新
 
         Args:
-            reward_df (pd.DataFrame): 報酬のログ。"arm_id"と"reward"列が必要。学習に関係のあるbandit_idだけに絞っている必要がある。
+            reward_df (pd.DataFrame): 報酬のログ。"arm_id"と"reward"列が必要。
         """
         params = self.parameter["arms"]
         diff = reward_df.groupby("arm_id")["reward"].agg(["sum", "size"])

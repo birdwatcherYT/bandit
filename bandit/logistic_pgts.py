@@ -9,12 +9,21 @@ from .bandit_base.contextual_bandit import ContextualBanditBase
 
 
 class LogisticPGTS(ContextualBanditBase):
-    def prior_parameter(self) -> dict[str, Any]:
-        """多次元正規分布の事前分布のパラメーター 平均ベクトルmu, 分散共分散行列Sigma
+    def __init__(
+        self,
+        arm_ids: list[str],
+        context_features: list[str],
+        intercept: bool = True,
+        M: int = 1,
+        initial_parameter: Optional[dict[str, Any]] = None,
+    ) -> None:
+        self.M = M
+        super().__init__(arm_ids, context_features, intercept, initial_parameter)
 
-        Returns:
-            dict[str, Any]: 事前分布のパラメータ
-        """
+    def common_parameter(self) -> dict[str, Any]:
+        return {}
+
+    def arm_parameter(self) -> dict[str, Any]:
         dim = len(self.context_features) + int(self.intercept)
         B = np.eye(dim)
         b = np.zeros(dim)
@@ -31,11 +40,8 @@ class LogisticPGTS(ContextualBanditBase):
         """パラメータの更新
 
         Args:
-            reward_df (pd.DataFrame): 報酬のログ。"arm_id"と"reward"列、context_featuresが必要。学習に関係のあるbandit_idだけに絞っている必要がある。
+            reward_df (pd.DataFrame): 報酬のログ。"arm_id"と"reward"列、context_featuresが必要。
         """
-        # M = 1
-        M = 10
-        # M = 100
         params = self.parameter["arms"]
         for arm_id in reward_df["arm_id"].unique():
             selector = reward_df["arm_id"] == arm_id
@@ -54,7 +60,7 @@ class LogisticPGTS(ContextualBanditBase):
             theta = np.random.multivariate_normal(b, B)
             kappa = rewards - 0.5
             # theta = params[arm_id]["theta"]
-            for _ in range(M):
+            for _ in range(self.M):
                 Omega = np.diag([random_polyagamma(1, x @ theta) for x in contexts])
                 Vinv = (contexts.T @ Omega) @ contexts + Binv
                 V = np.linalg.inv(Vinv)

@@ -54,12 +54,10 @@ def gradient_descent(
 
 
 class LogisticTS(ContextualBanditBase):
-    def prior_parameter(self) -> dict[str, Any]:
-        """多次元正規分布の事前分布のパラメーター 平均ベクトルmu, 分散共分散行列Sigma
+    def common_parameter(self) -> dict[str, Any]:
+        return {}
 
-        Returns:
-            dict[str, Any]: 事前分布のパラメータ
-        """
+    def arm_parameter(self) -> dict[str, Any]:
         dim = len(self.context_features) + int(self.intercept)
         # NOTE: 行列は先頭大文字
         return {"mu": np.zeros(dim), "Sigma": np.eye(dim)}
@@ -68,7 +66,7 @@ class LogisticTS(ContextualBanditBase):
         """パラメータの更新
 
         Args:
-            reward_df (pd.DataFrame): 報酬のログ。"arm_id"と"reward"列、context_featuresが必要。学習に関係のあるbandit_idだけに絞っている必要がある。
+            reward_df (pd.DataFrame): 報酬のログ。"arm_id"と"reward"列、context_featuresが必要。
         """
         params = self.parameter["arms"]
         for arm_id in reward_df["arm_id"].unique():

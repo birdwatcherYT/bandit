@@ -7,12 +7,10 @@ from .bandit_base.contextual_bandit import ContextualBanditBase
 
 
 class LinTS(ContextualBanditBase):
-    def prior_parameter(self) -> dict[str, Any]:
-        """多次元正規分布の事前分布計算に使うパラメーター
+    def common_parameter(self) -> dict[str, Any]:
+        return {}
 
-        Returns:
-            dict[str, Any]: 事前分布のパラメータ
-        """
+    def arm_parameter(self) -> dict[str, Any]:
         dim = len(self.context_features) + int(self.intercept)
         # NOTE: 分散既知設定なのでsigma=1としている
         std = 1
@@ -23,7 +21,7 @@ class LinTS(ContextualBanditBase):
             "A": A,
             "b": b,
             "std": std,
-            "mu": Ainv@ b,
+            "mu": Ainv @ b,
             "Sigma": std * std * Ainv,
         }
 
@@ -45,12 +43,12 @@ class LinTS(ContextualBanditBase):
             std = params[arm_id]["std"]
             for x in contexts:
                 A += np.outer(x, x)
-            b += rewards@contexts
+            b += rewards @ contexts
             Ainv = np.linalg.inv(A)
             #
             params[arm_id]["A"] = A
             params[arm_id]["b"] = b
-            params[arm_id]["mu"] = Ainv@b
+            params[arm_id]["mu"] = Ainv @ b
             params[arm_id]["Sigma"] = std * std * Ainv
 
     def select_arm(self, x: Optional[np.ndarray] = None) -> str:

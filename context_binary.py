@@ -47,9 +47,9 @@ print(true_theta)
 report = {}
 for bandit in [
     LogisticTS(arm_ids, features, intercept),
-    LogisticPGTS(arm_ids, features, intercept),
+    LogisticPGTS(arm_ids, features, intercept, M=10),
     LinTS(arm_ids, features, intercept),
-    LinUCB(arm_ids, features, intercept),
+    LinUCB(arm_ids, features, intercept, alpha=1),
     TSBinaryBandit(arm_ids),
 ]:
     name = bandit.__class__.__name__
