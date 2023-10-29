@@ -3,9 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from bandit.epsilon_greedy import EpsilonGreedyBandit
-from bandit.ts_binary import TSBinaryBandit
-from bandit.ucb import UCBBandit
+from bandit.epsilon_greedy import EpsilonGreedy
+from bandit.bernoulli_ts import BernoulliTS
+from bandit.ucb import UCB
 from bandit.bandit_base.bandit import BanditBase
 
 
@@ -36,9 +36,9 @@ print(true_prob)
 
 report = {}
 for bandit in [
-    TSBinaryBandit(arm_ids),
-    UCBBandit(arm_ids),
-    EpsilonGreedyBandit(arm_ids, epsilon=0.1),
+    BernoulliTS(arm_ids),
+    UCB(arm_ids),
+    EpsilonGreedy(arm_ids, epsilon=0.01),
 ]:
     name = bandit.__class__.__name__
     print(name)

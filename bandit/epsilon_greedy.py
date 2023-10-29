@@ -7,7 +7,7 @@ import pandas as pd
 from .bandit_base.bandit import BanditBase
 
 
-class EpsilonGreedyBandit(BanditBase):
+class EpsilonGreedy(BanditBase):
     def __init__(
         self,
         arm_ids: list[str],

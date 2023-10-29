@@ -7,7 +7,7 @@ import pandas as pd
 from .bandit_base.bandit import BanditBase
 
 
-class UCBBandit(BanditBase):
+class UCB(BanditBase):
     def common_parameter(self) -> dict[str, Any]:
         return {}
 

@@ -3,9 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from bandit.epsilon_greedy import EpsilonGreedyBandit
-from bandit.ts_continuous import TSContinuousBandit
-from bandit.ucb import UCBBandit
+from bandit.epsilon_greedy import EpsilonGreedy
+from bandit.normal_ts import NormalTS
+from bandit.ucb import UCB
 from bandit.bandit_base.bandit import BanditBase
 
 
@@ -38,9 +38,9 @@ print(true_param)
 
 report = {}
 for bandit in [
-    TSContinuousBandit(arm_ids),
-    UCBBandit(arm_ids),
-    EpsilonGreedyBandit(arm_ids, epsilon=0.1),
+    NormalTS(arm_ids),
+    UCB(arm_ids),
+    EpsilonGreedy(arm_ids, epsilon=0.01),
 ]:
     name = bandit.__class__.__name__
     print(name)

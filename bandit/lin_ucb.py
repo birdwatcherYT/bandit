@@ -46,10 +46,12 @@ class LinUCB(ContextualBanditBase):
                 )
             rewards = reward_df.loc[selector, "reward"].astype(float).to_numpy()
             #
-            A = np.array(params[arm_id]["A"])
-            b = np.array(params[arm_id]["b"])
+            # Ainv = params[arm_id]["Ainv"]
+            A = params[arm_id]["A"]
+            b = params[arm_id]["b"]
             for x in contexts:
                 A += np.outer(x, x)
+                # Ainv = Ainv - ((Ainv @ x) @ (x @ Ainv)) / (1 + x @ (Ainv @ x))
             b += rewards @ contexts
             Ainv = np.linalg.inv(A)
             #

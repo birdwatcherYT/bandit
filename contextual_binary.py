@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scipy.special import expit
 
-from bandit.ts_binary import TSBinaryBandit
+from bandit.bernoulli_ts import BernoulliTS
 from bandit.lin_ts import LinTS
 from bandit.lin_ucb import LinUCB
 from bandit.logistic_ts import LogisticTS
@@ -51,7 +51,7 @@ for bandit in [
     LogisticPGTS(arm_ids, features, intercept, M=10),
     LinTS(arm_ids, features, intercept),
     LinUCB(arm_ids, features, intercept, alpha=1),
-    TSBinaryBandit(arm_ids),
+    BernoulliTS(arm_ids),
 ]:
     name = bandit.__class__.__name__
     print(name)
@@ -66,5 +66,7 @@ for bandit in [
 pd.DataFrame(report).plot()
 plt.xlabel("Batch Iteration")
 plt.ylabel("Cumulative Regret")
-plt.title(f"Contextual Binary Reward Bandit: batch_size={batch_size}, arm_num={arm_num}")
+plt.title(
+    f"Contextual Binary Reward Bandit: batch_size={batch_size}, arm_num={arm_num}"
+)
 plt.show()

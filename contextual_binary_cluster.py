@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from bandit.ts_binary import TSBinaryBandit
+from bandit.bernoulli_ts import BernoulliTS
 from bandit.lin_ts import LinTS
 from bandit.lin_ucb import LinUCB
 from bandit.logistic_ts import LogisticTS
@@ -70,7 +70,7 @@ for bandit in [
     LogisticPGTS(arm_ids, features, intercept, M=10),
     LinTS(arm_ids, features, intercept),
     LinUCB(arm_ids, features, intercept, alpha=1),
-    TSBinaryBandit(arm_ids),
+    BernoulliTS(arm_ids),
 ]:
     name = bandit.__class__.__name__
     print(name)
@@ -84,9 +84,11 @@ for bandit in [
     report[name] = regret_log
 
     reward_df = get_batch(bandit, true_prob, centroid, features, 1000)
-    print(reward_df.groupby(["best_arm_id","arm_id"]).size())
+    print(reward_df.groupby(["best_arm_id", "arm_id"]).size())
 pd.DataFrame(report).plot()
 plt.xlabel("Batch Iteration")
 plt.ylabel("Cumulative Regret")
-plt.title(f"Contextual Binary Reward Bandit for Clustering data: batch_size={batch_size}, arm_num={arm_num}")
+plt.title(
+    f"Contextual Binary Reward Bandit for Clustering data: batch_size={batch_size}, arm_num={arm_num}"
+)
 plt.show()

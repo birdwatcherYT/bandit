@@ -8,7 +8,7 @@ class CascadingBanditBase(BanditBase, metaclass=ABCMeta):
     def __init__(
         self,
         arm_ids: list[str],  # アイテムID
-        K: int, # 何個提示するか
+        K: int,  # 何個提示するか
         initial_parameter: Optional[dict[str, Any]] = None,
     ) -> None:
         self.K = K
