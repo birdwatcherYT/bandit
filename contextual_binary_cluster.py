@@ -16,7 +16,7 @@ def get_batch(
     true_prob: list[dict[str, float]],
     centroid: np.ndarray,
     features: list[str],
-    batch_size: int = 100,
+    batch_size,
 ) -> pd.DataFrame:
     # 学習データ
     log = []
@@ -24,9 +24,11 @@ def get_batch(
         x = np.random.rand(len(features))
         arm_id = bandit.select_arm(x)
         cluster = np.argmin(np.linalg.norm(centroid - x, axis=1))
-        maxprob = max(true_prob[cluster].values())
+        argmax = np.argmax(list(true_prob[cluster].values()))
+        maxprob = list(true_prob[cluster].values())[argmax]
         log.append(
             {
+                "best_arm_id": bandit.arm_ids[argmax],
                 "arm_id": arm_id,
                 "reward": np.random.binomial(1, true_prob[cluster][arm_id]),
                 "regret": maxprob - true_prob[cluster][arm_id],
@@ -36,15 +38,16 @@ def get_batch(
     return pd.DataFrame(log)
 
 
+batch_size = 100
 arm_num = 5
 feature_num = 10
 intercept = True
 # intercept = False
 
-onehot_maxprob = 0.7
-onehot_minprob = 0.3
-# onehot = True
-onehot = False
+onehot_maxprob = 0.5
+onehot_minprob = 0.2
+onehot = True
+# onehot = False
 
 cluster_num = arm_num if onehot else 4
 arm_ids = [f"arm{i}" for i in range(arm_num)]
@@ -74,10 +77,16 @@ for bandit in [
     regret_log = []
     cumsum_regret = 0
     for i in tqdm(range(100)):
-        reward_df = get_batch(bandit, true_prob, centroid, features)
+        reward_df = get_batch(bandit, true_prob, centroid, features, batch_size)
         cumsum_regret += reward_df["regret"].sum()
         regret_log.append(cumsum_regret)
         bandit.train(reward_df)
     report[name] = regret_log
+
+    reward_df = get_batch(bandit, true_prob, centroid, features, 1000)
+    print(reward_df.groupby(["best_arm_id","arm_id"]).size())
 pd.DataFrame(report).plot()
+plt.xlabel("Batch Iteration")
+plt.ylabel("Cumulative Regret")
+plt.title(f"Contextual Binary Reward Bandit for Clustering data: batch_size={batch_size}, arm_num={arm_num}")
 plt.show()

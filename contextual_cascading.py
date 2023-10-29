@@ -13,7 +13,7 @@ def get_batch(
     bandit: ContextualCascadingBanditBase,
     true_theta: np.ndarray,
     item_vectors: dict[str, float],
-    batch_size: int = 1,
+    batch_size: int,
 ) -> pd.DataFrame:
     # 学習データ
     log = []
@@ -38,28 +38,32 @@ def get_batch(
     return pd.DataFrame(log)
 
 
-arm_num = 20
+batch_size = 1
+item_num = 20
 feature_num = 5
 K = 10
-arm_ids = [f"arm{i}" for i in range(arm_num)]
+item_ids = [f"arm{i}" for i in range(item_num)]
 true_theta = np.random.normal(size=feature_num)
 print(true_theta)
-item_vectors = {f"arm{i}": np.random.normal(size=feature_num) for i in range(arm_num)}
+item_vectors = {f"arm{i}": np.random.normal(size=feature_num) for i in range(item_num)}
 
 report = {}
 for bandit in [
-    CascadingLinTS(arm_ids, K, item_vectors),
-    CascadingLinUCB(arm_ids, K, item_vectors, alpha=1),
+    CascadingLinTS(item_ids, K, item_vectors),
+    CascadingLinUCB(item_ids, K, item_vectors, alpha=1),
 ]:
     name = bandit.__class__.__name__
     print(name)
     regret_log = []
     cumsum_regret = 0
     for i in tqdm(range(10000)):
-        reward_df = get_batch(bandit, true_theta, item_vectors)
+        reward_df = get_batch(bandit, true_theta, item_vectors, batch_size)
         cumsum_regret += reward_df["regret"].sum()
         regret_log.append(cumsum_regret)
         bandit.train(reward_df)
     report[name] = regret_log
 pd.DataFrame(report).plot()
+plt.xlabel("Batch Iteration")
+plt.ylabel("Cumulative Regret")
+plt.title(f"Contextual Cascading Bandit: batch_size={batch_size}, item_num={item_num}")
 plt.show()

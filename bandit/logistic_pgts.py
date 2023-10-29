@@ -27,10 +27,10 @@ class LogisticPGTS(ContextualBanditBase):
         dim = len(self.context_features) + int(self.intercept)
         B = np.eye(dim)
         b = np.zeros(dim)
-        theta = np.random.multivariate_normal(b, B)
+        # theta = np.random.multivariate_normal(b, B)
         Binv = np.linalg.inv(B)
         return {
-            "theta": theta,
+            # "theta": theta,
             "B": B,
             "b": b,
             "Binv": Binv,

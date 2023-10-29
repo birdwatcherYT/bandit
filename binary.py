@@ -10,7 +10,7 @@ from bandit.bandit_base.bandit import BanditBase
 
 
 def get_batch(
-    bandit: BanditBase, true_prob: dict[str, float], batch_size: int = 1
+    bandit: BanditBase, true_prob: dict[str, float], batch_size: int
 ) -> pd.DataFrame:
     # 学習データ
     log = []
@@ -28,7 +28,8 @@ def get_batch(
     return pd.DataFrame(log)
 
 
-arm_num = 3
+batch_size = 1
+arm_num = 5
 arm_ids = [f"arm{i}" for i in range(arm_num)]
 true_prob = {a: np.random.rand() for a in arm_ids}
 print(true_prob)
@@ -43,11 +44,14 @@ for bandit in [
     print(name)
     regret_log = []
     cumsum_regret = 0
-    for i in tqdm(range(1000)):
-        reward_df = get_batch(bandit, true_prob)
+    for i in tqdm(range(10000)):
+        reward_df = get_batch(bandit, true_prob, batch_size)
         cumsum_regret += reward_df["regret"].sum()
         regret_log.append(cumsum_regret)
         bandit.train(reward_df)
     report[name] = regret_log
 pd.DataFrame(report).plot()
+plt.xlabel("Batch Iteration")
+plt.ylabel("Cumulative Regret")
+plt.title(f"Binary Reward Bandit: batch_size={batch_size}, arm_num={arm_num}")
 plt.show()

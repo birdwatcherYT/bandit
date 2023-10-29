@@ -16,7 +16,7 @@ def get_batch(
     bandit: BanditBase,
     true_theta: dict[str, np.ndarray],
     features: list[str],
-    batch_size: int = 100,
+    batch_size: int,
 ) -> pd.DataFrame:
     # 学習データ
     log = []
@@ -36,6 +36,7 @@ def get_batch(
     return pd.DataFrame(log)
 
 
+batch_size = 100
 arm_num = 3
 feature_num = 5
 intercept = False
@@ -57,10 +58,13 @@ for bandit in [
     regret_log = []
     cumsum_regret = 0
     for i in tqdm(range(100)):
-        reward_df = get_batch(bandit, true_theta, features)
+        reward_df = get_batch(bandit, true_theta, features, batch_size)
         cumsum_regret += reward_df["regret"].sum()
         regret_log.append(cumsum_regret)
         bandit.train(reward_df)
     report[name] = regret_log
 pd.DataFrame(report).plot()
+plt.xlabel("Batch Iteration")
+plt.ylabel("Cumulative Regret")
+plt.title(f"Contextual Binary Reward Bandit: batch_size={batch_size}, arm_num={arm_num}")
 plt.show()
