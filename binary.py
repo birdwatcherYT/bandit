@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from bandit.epsilon_greedy import EpsilonGreedyBandit
 from bandit.ts_binary import TSBinaryBandit
 from bandit.ucb import UCBBandit
 from bandit.bandit_base.bandit import BanditBase
@@ -32,7 +33,11 @@ truth_prob = {a: np.random.rand() for a in arm_ids}
 print(truth_prob)
 
 report = {}
-for bandit in [TSBinaryBandit(arm_ids), UCBBandit(arm_ids)]:
+for bandit in [
+    TSBinaryBandit(arm_ids),
+    UCBBandit(arm_ids),
+    EpsilonGreedyBandit(arm_ids),
+]:
     name = bandit.__class__.__name__
     print(name)
     regret_log = []
