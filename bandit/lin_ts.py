@@ -27,16 +27,15 @@ class LinTS(ContextualBanditBase):
 
     def train(self, reward_df: pd.DataFrame) -> None:
         params = self.parameter["arms"]
-        for arm_id in reward_df["arm_id"].unique():
-            selector = reward_df["arm_id"] == arm_id
+        for arm_id, arm_df in reward_df.groupby("arm_id"):
             contexts = self.context_transform(
-                reward_df.loc[selector, self.context_features].astype(float).to_numpy()
+                arm_df[self.context_features].astype(float).to_numpy()
             )
             if self.intercept:
                 contexts = np.concatenate(
                     [contexts, np.ones(contexts.shape[0]).reshape((-1, 1))], axis=1
                 )
-            rewards = reward_df.loc[selector, "reward"].astype(float).to_numpy()
+            rewards = arm_df["reward"].astype(float).to_numpy()
             #
             A = params[arm_id]["A"]
             b = params[arm_id]["b"]

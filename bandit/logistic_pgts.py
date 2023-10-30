@@ -43,16 +43,15 @@ class LogisticPGTS(ContextualBanditBase):
             reward_df (pd.DataFrame): 報酬のログ。"arm_id"と"reward"列、context_featuresが必要。
         """
         params = self.parameter["arms"]
-        for arm_id in reward_df["arm_id"].unique():
-            selector = reward_df["arm_id"] == arm_id
+        for arm_id, arm_df in reward_df.groupby("arm_id"):
             contexts = self.context_transform(
-                reward_df.loc[selector, self.context_features].astype(float).to_numpy()
+                arm_df[self.context_features].astype(float).to_numpy()
             )
             if self.intercept:
                 contexts = np.concatenate(
                     [contexts, np.ones(contexts.shape[0]).reshape((-1, 1))], axis=1
                 )
-            rewards = reward_df.loc[selector, "reward"].astype(int).to_numpy()
+            rewards = arm_df["reward"].astype(int).to_numpy()
 
             B = params[arm_id]["B"]
             b = params[arm_id]["b"]

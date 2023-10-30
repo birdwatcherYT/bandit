@@ -20,9 +20,8 @@ class NormalTS(BanditBase):
             reward_df (pd.DataFrame): 報酬のログ。"arm_id"と"reward"列が必要。
         """
         params = self.parameter["arms"]
-        for arm_id in reward_df["arm_id"].unique():
-            selector = reward_df["arm_id"] == arm_id
-            rewards = reward_df.loc[selector, "reward"].astype(float).to_numpy()
+        for arm_id, arm_df in reward_df.groupby("arm_id"):
+            rewards = arm_df["reward"].astype(float).to_numpy()
             sum_rewards = rewards.sum()
             sum_rewards2 = rewards @ rewards
             n = rewards.shape[0]
