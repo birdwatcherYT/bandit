@@ -7,6 +7,7 @@ from scipy.special import expit
 from bandit.bernoulli_ts import BernoulliTS
 from bandit.lin_ts import LinTS
 from bandit.lin_ucb import LinUCB
+from bandit.lin_ucb_hybrid import LinUCBHybrid
 from bandit.logistic_ts import LogisticTS
 from bandit.logistic_pgts import LogisticPGTS
 from bandit.bandit_base.bandit import BanditBase
@@ -51,6 +52,7 @@ for bandit in [
     LogisticPGTS(arm_ids, features, intercept, M=10),
     LinTS(arm_ids, features, intercept),
     LinUCB(arm_ids, features, intercept, alpha=1),
+    LinUCBHybrid(arm_ids, features, intercept, alpha=1),
     BernoulliTS(arm_ids),
 ]:
     name = bandit.__class__.__name__

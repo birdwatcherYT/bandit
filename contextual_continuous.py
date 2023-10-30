@@ -6,6 +6,7 @@ from tqdm import tqdm
 from bandit.normal_ts import NormalTS
 from bandit.lin_ts import LinTS
 from bandit.lin_ucb import LinUCB
+from bandit.lin_ucb_hybrid import LinUCBHybrid
 from bandit.bandit_base.bandit import BanditBase
 
 
@@ -46,6 +47,7 @@ report = {}
 for bandit in [
     LinTS(arm_ids, features, intercept),
     LinUCB(arm_ids, features, intercept, alpha=1),
+    LinUCBHybrid(arm_ids, features, intercept, alpha=1),
     NormalTS(arm_ids),
 ]:
     name = bandit.__class__.__name__
