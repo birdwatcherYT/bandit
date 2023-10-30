@@ -27,12 +27,12 @@ python -m contextual_binary_cluster
 python -m contextual_continuous
 ```
 
-# Cascading Bandit
+## Cascading Bandit
 ```sh
 python -m cascading
 ```
 
-# Contextual Cascading Bandit
+## Contextual Cascading Bandit
 ```sh
 python -m contextual_cascading
 ```

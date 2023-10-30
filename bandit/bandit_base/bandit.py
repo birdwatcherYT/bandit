@@ -52,6 +52,6 @@ class BanditBase(metaclass=ABCMeta):
             x (Optional[np.ndarray], optional): 特徴ベクトル. Defaults to None.
 
         Returns:
-            str: 腕ID
+            Union[str, list[str]]: 腕ID
         """
         raise NotImplementedError()
