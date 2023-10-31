@@ -3,8 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from bandit.cascading_ucb import CascadingUCB
-from bandit.cascading_klucb import CascadingKLUCB
+from bandit.cascade_ucb import CascadeUCB
+from bandit.cascade_klucb import CascadeKLUCB
 from bandit.bandit_base.cascading_bandit import CascadingBanditBase
 
 
@@ -13,13 +13,13 @@ def get_batch(
 ) -> pd.DataFrame:
     # 学習データ
     log = []
-    maxprobs = sorted(true_prob.values())[::-1]
+    sorted_true_prob = np.array(sorted(true_prob.values())[::-1])
     for _ in range(batch_size):
         order = bandit.select_arm()
-        regret = 0
         clicked = None
-        for i, a in enumerate(order):
-            regret += max(0, maxprobs[i] - true_prob[a])
+        maxobj = 1 - np.prod(1 - sorted_true_prob[: len(order)])
+        obj = 1 - np.prod([1 - true_prob[a] for a in order])
+        for a in order:
             if clicked is None and np.random.binomial(1, true_prob[a]):
                 clicked = a
                 break
@@ -27,7 +27,7 @@ def get_batch(
             {
                 "order": order,
                 "clicked": clicked,
-                "regret": regret,
+                "regret": maxobj - obj,
             }
         )
     return pd.DataFrame(log)
@@ -42,8 +42,8 @@ print(true_prob)
 
 report = {}
 for bandit in [
-    CascadingUCB(item_ids, K),
-    CascadingKLUCB(item_ids, K),
+    CascadeUCB(item_ids, K),
+    CascadeKLUCB(item_ids, K),
 ]:
     name = bandit.__class__.__name__
     print(name)

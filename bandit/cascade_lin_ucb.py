@@ -6,7 +6,7 @@ import pandas as pd
 from .bandit_base.contextual_cascading_bandit import ContextualCascadingBanditBase
 
 
-class CascadingLinUCB(ContextualCascadingBanditBase):
+class CascadeLinUCB(ContextualCascadingBanditBase):
     def __init__(
         self,
         arm_ids: list[str],

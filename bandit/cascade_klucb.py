@@ -46,7 +46,7 @@ def newton_method(
     return x
 
 
-class CascadingKLUCB(CascadingBanditBase):
+class CascadeKLUCB(CascadingBanditBase):
     def common_parameter(self) -> dict[str, Any]:
         return {"total_count": 0}
 
@@ -76,13 +76,13 @@ class CascadingKLUCB(CascadingBanditBase):
             p = params[arm_id]["sum"] / params[arm_id]["count"]
             params[arm_id]["klucb"] = newton_method(
                 obj=partial(
-                    CascadingKLUCB.objective,
+                    CascadeKLUCB.objective,
                     p=p,
                     count_a=params[arm_id]["count"],
                     total_count=total_count,
                 ),
                 grad=partial(
-                    CascadingKLUCB.gradient,
+                    CascadeKLUCB.gradient,
                     p=p,
                     count_a=params[arm_id]["count"],
                     total_count=total_count,

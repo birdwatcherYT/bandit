@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.special import expit
 from tqdm import tqdm
 
-from bandit.cascading_lin_ts import CascadingLinTS
-from bandit.cascading_lin_ucb import CascadingLinUCB
+from bandit.cascade_lin_ts import CascadeLinTS
+from bandit.cascade_lin_ucb import CascadeLinUCB
 from bandit.bandit_base.contextual_cascading_bandit import ContextualCascadingBanditBase
 
 
@@ -49,8 +49,8 @@ item_vectors = {f"arm{i}": np.random.normal(size=feature_num) for i in range(ite
 
 report = {}
 for bandit in [
-    CascadingLinTS(item_ids, K, item_vectors),
-    CascadingLinUCB(item_ids, K, item_vectors, alpha=1),
+    CascadeLinTS(item_ids, K, item_vectors),
+    CascadeLinUCB(item_ids, K, item_vectors, alpha=1),
 ]:
     name = bandit.__class__.__name__
     print(name)

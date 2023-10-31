@@ -6,7 +6,7 @@ import pandas as pd
 from .bandit_base.cascading_bandit import CascadingBanditBase
 
 
-class CascadingUCB(CascadingBanditBase):
+class CascadeUCB(CascadingBanditBase):
     def common_parameter(self) -> dict[str, Any]:
         return {"total_count": 0}
 

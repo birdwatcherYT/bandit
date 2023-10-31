@@ -6,7 +6,7 @@ import pandas as pd
 from .bandit_base.contextual_cascading_bandit import ContextualCascadingBanditBase
 
 
-class CascadingLinTS(ContextualCascadingBanditBase):
+class CascadeLinTS(ContextualCascadingBanditBase):
     def common_parameter(self) -> dict[str, Any]:
         dim = len(list(self.item_vectors.values())[0])
         # NOTE: 分散既知設定なのでsigma=1としている
