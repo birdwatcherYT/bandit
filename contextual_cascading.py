@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.special import expit
 from tqdm import tqdm
 
+from bandit.cascade_ucb import CascadeUCB
+from bandit.cascade_klucb import CascadeKLUCB
 from bandit.cascade_lin_ts import CascadeLinTS
 from bandit.cascade_lin_ucb import CascadeLinUCB
 from bandit.bandit_base.contextual_cascading_bandit import ContextualCascadingBanditBase
@@ -53,6 +55,8 @@ report = {}
 for bandit in [
     CascadeLinTS(item_ids, K, item_vectors),
     CascadeLinUCB(item_ids, K, item_vectors, alpha=1),
+    CascadeUCB(item_ids, K),
+    CascadeKLUCB(item_ids, K),
 ]:
     name = bandit.__class__.__name__
     print(name)
