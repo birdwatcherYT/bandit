@@ -1,6 +1,6 @@
 # バンディットアルゴリズム
 
-[Qiita](https://qiita.com/birdwatcher)で紹介したバンディットの実装。
+[いろんなバンディットアルゴリズムを理解しよう](https://qiita.com/birdwatcher/items/9560afeea61d14cff317)で紹介したバンディットの実装。
 
 ## Bandit
 ### 0/1報酬
