@@ -17,14 +17,16 @@ def get_batch(
 ) -> pd.DataFrame:
     # 学習データ
     log = []
-    maxprobs = sorted([expit(x @ true_theta) for x in item_vectors.values()])[::-1]
+    sorted_true_prob = np.array(sorted([expit(x @ true_theta) for x in item_vectors.values()])[::-1])
     for _ in range(batch_size):
         order = bandit.select_arm()
-        regret = 0
         clicked = None
-        for i, a in enumerate(order):
+        # maxobj = 1 - np.prod(1 - sorted_true_prob[: len(order)])
+        # obj = 1 - np.prod([1 - expit(true_theta @ item_vectors[a]) for a in order])
+        maxobj = -np.log(1 - sorted_true_prob[: len(order)]).sum()
+        obj = -np.log([1 - expit(true_theta @ item_vectors[a]) for a in order]).sum()
+        for a in order:
             prob = expit(true_theta @ item_vectors[a])
-            regret += max(0, maxprobs[i] - prob)
             if clicked is None and np.random.binomial(1, prob):
                 clicked = a
                 break
@@ -32,7 +34,7 @@ def get_batch(
             {
                 "order": order,
                 "clicked": clicked,
-                "regret": regret,
+                "regret": maxobj - obj,
             }
         )
     return pd.DataFrame(log)

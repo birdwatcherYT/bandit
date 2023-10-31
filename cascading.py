@@ -17,8 +17,10 @@ def get_batch(
     for _ in range(batch_size):
         order = bandit.select_arm()
         clicked = None
-        maxobj = 1 - np.prod(1 - sorted_true_prob[: len(order)])
-        obj = 1 - np.prod([1 - true_prob[a] for a in order])
+        # maxobj = 1 - np.prod(1 - sorted_true_prob[: len(order)])
+        # obj = 1 - np.prod([1 - true_prob[a] for a in order])
+        maxobj = -np.log(1 - sorted_true_prob[: len(order)]).sum()
+        obj = -np.log([1 - true_prob[a] for a in order]).sum()
         for a in order:
             if clicked is None and np.random.binomial(1, true_prob[a]):
                 clicked = a
