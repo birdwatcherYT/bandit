@@ -5,6 +5,7 @@ from scipy.special import expit
 from tqdm import tqdm
 from typing import Optional
 
+from bandit.bernoulli_ts import BernoulliTS
 from bandit.logistic_ts import LogisticTS
 from bandit.logistic_pgts import LogisticPGTS
 from bandit.lin_ts import LinTS
@@ -92,6 +93,7 @@ for bandit in [
     LogisticPGTS(arm_ids, features, intercept, M=10),
     LinTS(arm_ids, features, intercept),
     LinUCB(arm_ids, features, intercept, alpha=1),
+    BernoulliTS(arm_ids),
 ]:
     name = bandit.__class__.__name__
     print(name)
@@ -106,5 +108,7 @@ for bandit in [
 pd.DataFrame(report).plot()
 plt.xlabel("Batch Iteration")
 plt.ylabel("Cumulative Regret")
-plt.title(f"Personalized Cascading Bandit: batch_size={batch_size}, item_num={arm_num}")
+plt.title(
+    f"Personalized Cascading Bandit: batch_size={batch_size}, item_num={arm_num}, \nonly_first_click={only_first_click}"
+)
 plt.show()
