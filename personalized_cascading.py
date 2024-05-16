@@ -27,8 +27,10 @@ def get_batch(
         order = bandit.select_arm(x, top_k=top_k)
         true_prob = {a: expit(theta @ x) for a, theta in true_theta.items()}
         sorted_true_prob = np.array(sorted(true_prob.values())[::-1])
-        maxobj = -np.log(1 - sorted_true_prob[: len(order)]).sum()
-        obj = -np.log([1 - true_prob[a] for a in order]).sum()
+        # maxobj = -np.log(1 - sorted_true_prob[: len(order)]).sum()
+        # obj = -np.log([1 - true_prob[a] for a in order]).sum()
+        maxobj = sorted_true_prob[: len(order)].sum()
+        obj = np.array([true_prob[a] for a in order]).sum()
         # NOTE: 複数クリックを許容する
         clicked = [a for a in order if np.random.binomial(1, true_prob[a])]
         log.append(
