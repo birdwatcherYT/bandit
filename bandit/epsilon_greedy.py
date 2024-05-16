@@ -35,24 +35,23 @@ class EpsilonGreedy(BanditBase):
             params[arm_id]["sum"] += row["sum"]
             params[arm_id]["count"] += row["size"]
 
-    def select_arm(self, x: Optional[np.ndarray] = None) -> str:
-        """腕の選択
+    def __get_score__(self, x: Optional[np.ndarray] = None) -> list[float]:
+        params = self.parameter["arms"]
+        return [
+            (
+                params[arm_id]["sum"] / params[arm_id]["count"]
+                if params[arm_id]["count"] != 0
+                else float("inf")
+            )
+            for arm_id in self.arm_ids
+        ]
 
-        Args:
-            x (Optional[np.ndarray], optional): 使わない. Defaults to None.
+    def select_arm(self) -> str:
+        """腕の選択のオーバーライド
 
         Returns:
             str: 腕ID
         """
         if np.random.rand() < self.epsilon:
             return np.random.choice(self.arm_ids)
-        params = self.parameter["arms"]
-        index = np.argmax(
-            [
-                params[arm_id]["sum"] / params[arm_id]["count"]
-                if params[arm_id]["count"] != 0
-                else float("inf")
-                for arm_id in self.arm_ids
-            ]
-        )
-        return self.arm_ids[index]
+        return self.arm_ids[np.argmax(self.__get_score__())]

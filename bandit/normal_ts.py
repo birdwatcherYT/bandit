@@ -44,27 +44,16 @@ class NormalTS(BanditBase):
                 / 2
             )
 
-    def select_arm(self, x: Optional[np.ndarray] = None) -> str:
-        """腕の選択
-
-        Args:
-            x (Optional[np.ndarray], optional): 使わない. Defaults to None.
-
-        Returns:
-            str: 腕ID
-        """
+    def __get_score__(self, x: Optional[np.ndarray] = None) -> list[float]:
         params = self.parameter["arms"]
-        index = np.argmax(
-            [
-                np.random.normal(
-                    params[arm_id]["m"],
-                    1
-                    / (
-                        params[arm_id]["beta"]
-                        * np.random.gamma(params[arm_id]["a"], 1 / params[arm_id]["b"])
-                    ),
-                )
-                for arm_id in self.arm_ids
-            ]
-        )
-        return self.arm_ids[index]
+        return [
+            np.random.normal(
+                params[arm_id]["m"],
+                1
+                / (
+                    params[arm_id]["beta"]
+                    * np.random.gamma(params[arm_id]["a"], 1 / params[arm_id]["b"])
+                ),
+            )
+            for arm_id in self.arm_ids
+        ]

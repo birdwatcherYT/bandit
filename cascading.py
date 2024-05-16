@@ -3,27 +3,32 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from bandit.cascade_ucb import CascadeUCB
-from bandit.cascade_klucb import CascadeKLUCB
-from bandit.bandit_base.cascading_bandit import CascadingBanditBase
+from bandit.ucb import UCB
+from bandit.klucb import KLUCB
+from bandit.bandit_base.bandit import BanditBase
+from bandit.tools import expand_cascade_data
+
+K = 10
 
 
 def get_batch(
-    bandit: CascadingBanditBase, true_prob: dict[str, float], batch_size: int
+    bandit: BanditBase, true_prob: dict[str, float], batch_size: int
 ) -> pd.DataFrame:
     # 学習データ
     log = []
     sorted_true_prob = np.array(sorted(true_prob.values())[::-1])
     for _ in range(batch_size):
-        order = bandit.select_arm()
-        clicked = None
+        order = bandit.select_arm(top_k=K)
         # maxobj = 1 - np.prod(1 - sorted_true_prob[: len(order)])
         # obj = 1 - np.prod([1 - true_prob[a] for a in order])
         maxobj = -np.log(1 - sorted_true_prob[: len(order)]).sum()
         obj = -np.log([1 - true_prob[a] for a in order]).sum()
+
+        clicked = []
         for a in order:
-            if clicked is None and np.random.binomial(1, true_prob[a]):
-                clicked = a
+            if np.random.binomial(1, true_prob[a]):
+                # NOTE: 論文では初回クリックしたらそれ以降は見ないという仮定だった
+                clicked = [a]
                 break
         log.append(
             {
@@ -37,15 +42,14 @@ def get_batch(
 
 batch_size = 1
 item_num = 20
-K = 10
 item_ids = [f"arm{i}" for i in range(item_num)]
 true_prob = {a: np.random.rand() for a in item_ids}
 print(true_prob)
 
 report = {}
 for bandit in [
-    CascadeUCB(item_ids, K),
-    CascadeKLUCB(item_ids, K),
+    UCB(item_ids, alpha=1.5),
+    KLUCB(item_ids),
 ]:
     name = bandit.__class__.__name__
     print(name)
@@ -55,7 +59,7 @@ for bandit in [
         reward_df = get_batch(bandit, true_prob, batch_size)
         cumsum_regret += reward_df["regret"].sum()
         regret_log.append(cumsum_regret)
-        bandit.train(reward_df)
+        bandit.train(expand_cascade_data(reward_df, True))
     report[name] = regret_log
 pd.DataFrame(report).plot()
 plt.xlabel("Batch Iteration")

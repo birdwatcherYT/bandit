@@ -6,6 +6,7 @@ from tqdm import tqdm
 from bandit.epsilon_greedy import EpsilonGreedy
 from bandit.normal_ts import NormalTS
 from bandit.ucb import UCB
+from bandit.klucb import KLUCB
 from bandit.bandit_base.bandit import BanditBase
 
 
@@ -39,7 +40,8 @@ print(true_param)
 report = {}
 for bandit in [
     NormalTS(arm_ids),
-    UCB(arm_ids),
+    UCB(arm_ids, alpha=2),
+    # KLUCB(arm_ids),
     EpsilonGreedy(arm_ids, epsilon=0.01),
 ]:
     name = bandit.__class__.__name__

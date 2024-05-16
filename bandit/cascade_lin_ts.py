@@ -28,10 +28,12 @@ class CascadeLinTS(ContextualCascadingBanditBase):
     def train(self, reward_df: pd.DataFrame) -> None:
         params = self.parameter["common"]
         for i, row in reward_df.iterrows():
+            # 提示順で最初にクリックされたアイテム
+            clicked = row["clicked"][0] if len(row["clicked"]) != 0 else None
             for observed in row["order"]:
                 x = self.item_vectors[observed]
                 params["A"] += np.outer(x, x) / (params["std"] ** 2)
-                if observed == row["clicked"]:
+                if observed == clicked:
                     params["b"] += x
                     break
 
@@ -39,23 +41,12 @@ class CascadeLinTS(ContextualCascadingBanditBase):
         params["Sigma"] = Ainv
         params["mu"] = Ainv @ params["b"] / (params["std"] ** 2)
 
-    def select_arm(self, x: Optional[np.ndarray] = None) -> list[str]:
-        """腕の選択
-
-        Args:
-            x (Optional[np.ndarray], optional): contexts. Defaults to None.
-
-        Returns:
-            list[str]: 腕IDのリスト
-        """
+    def __get_score__(self, x: Optional[np.ndarray] = None) -> list[float]:
         params = self.parameter["common"]
-        index = np.argsort(
-            [
-                np.dot(
-                    self.item_vectors[arm_id],
-                    np.random.multivariate_normal(params["mu"], params["Sigma"]),
-                )
-                for arm_id in self.arm_ids
-            ]
-        )[::-1]
-        return [self.arm_ids[i] for i in index[: self.K]]
+        return [
+            np.dot(
+                self.item_vectors[arm_id],
+                np.random.multivariate_normal(params["mu"], params["Sigma"]),
+            )
+            for arm_id in self.arm_ids
+        ]

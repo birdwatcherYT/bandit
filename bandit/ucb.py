@@ -8,6 +8,15 @@ from .bandit_base.bandit import BanditBase
 
 
 class UCB(BanditBase):
+    def __init__(
+        self,
+        arm_ids: list[str],
+        alpha: float = 1,
+        initial_parameter: Optional[dict[str, Any]] = None,
+    ) -> None:
+        self.alpha = alpha
+        super().__init__(arm_ids, initial_parameter)
+
     def common_parameter(self) -> dict[str, Any]:
         return {}
 
@@ -26,24 +35,15 @@ class UCB(BanditBase):
             params[arm_id]["sum"] += row["sum"]
             params[arm_id]["count"] += row["size"]
 
-    def select_arm(self, x: Optional[np.ndarray] = None) -> str:
-        """腕の選択
-
-        Args:
-            x (Optional[np.ndarray], optional): 使わない. Defaults to None.
-
-        Returns:
-            str: 腕ID
-        """
+    def __get_score__(self, x: Optional[np.ndarray] = None) -> list[float]:
         params = self.parameter["arms"]
         total_count = np.sum([params[arm_id]["count"] for arm_id in self.arm_ids])
-        index = np.argmax(
-            [
+        return [
+            (
                 params[arm_id]["sum"] / params[arm_id]["count"]
-                + np.sqrt(2 * np.log(total_count) / params[arm_id]["count"])
+                + np.sqrt(self.alpha * np.log(total_count) / params[arm_id]["count"])
                 if params[arm_id]["count"] != 0
                 else float("inf")
-                for arm_id in self.arm_ids
-            ]
-        )
-        return self.arm_ids[index]
+            )
+            for arm_id in self.arm_ids
+        ]
