@@ -11,6 +11,7 @@ from bandit.logistic_pgts import LogisticPGTS
 from bandit.lin_ts import LinTS
 from bandit.lin_ucb import LinUCB
 from bandit.bandit_base.bandit import BanditBase
+from bandit.tools import ClusterBandit
 
 
 def get_batch(
@@ -95,16 +96,28 @@ if __name__ == "__main__":
     # only_first_click = True  # 最初のクリックまでを見る場合
     only_first_click = False  # 最後のクリックまで見る場合
 
-    report = {}
+    # クラスタリングのためのデータ用意
+    num_users = 10000
+    user_contexts = np.random.rand(num_users, len(features))
+    cluster_num = [5, 10, 20]
 
-    for bandit in [
-        LogisticTS(arm_ids, features, intercept),
-        LogisticPGTS(arm_ids, features, intercept, M=10),
-        LinTS(arm_ids, features, intercept),
-        LinUCB(arm_ids, features, intercept, alpha=1),
-        BernoulliTS(arm_ids),
+    report = {}
+    for bandit, suffix in [
+        (LogisticTS(arm_ids, features, intercept), ""),
+        (LogisticPGTS(arm_ids, features, intercept, M=10), ""),
+        (LinTS(arm_ids, features, intercept), ""),
+        (LinUCB(arm_ids, features, intercept, alpha=1), ""),
+        (BernoulliTS(arm_ids), ""),
+    ] + [
+        (
+            ClusterBandit(
+                [BernoulliTS(arm_ids) for _ in range(c)], user_contexts, features
+            ),
+            f": BernoulliTS x {c}",
+        )
+        for c in cluster_num
     ]:
-        name = bandit.__class__.__name__
+        name = bandit.__class__.__name__ + suffix
         print(name)
         regret_log = []
         cumsum_regret = 0
