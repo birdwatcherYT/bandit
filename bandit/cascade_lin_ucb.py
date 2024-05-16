@@ -10,14 +10,13 @@ class CascadeLinUCB(ContextualCascadingBanditBase):
     def __init__(
         self,
         arm_ids: list[str],
-        K: int,
         item_vectors: dict[str, np.ndarray],
         alpha: int = 1,
         intercept: bool = True,
         initial_parameter: Optional[dict[str, Any]] = None,
     ) -> None:
         self.alpha = alpha
-        super().__init__(arm_ids, K, item_vectors, intercept, initial_parameter)
+        super().__init__(arm_ids, item_vectors, intercept, initial_parameter)
 
     def common_parameter(self) -> dict[str, Any]:
         dim = len(list(self.item_vectors.values())[0])
@@ -40,10 +39,12 @@ class CascadeLinUCB(ContextualCascadingBanditBase):
     def train(self, reward_df: pd.DataFrame) -> None:
         params = self.parameter["common"]
         for i, row in reward_df.iterrows():
+            # 提示順で最初にクリックされたアイテム
+            clicked = row["clicked"][0] if len(row["clicked"]) != 0 else None
             for observed in row["order"]:
                 x = self.item_vectors[observed]
                 params["A"] += np.outer(x, x) / (params["std"] ** 2)
-                if observed == row["clicked"]:
+                if observed == clicked:
                     params["b"] += x
                     break
 
@@ -51,27 +52,16 @@ class CascadeLinUCB(ContextualCascadingBanditBase):
         params["Sigma"] = Ainv
         params["mu"] = Ainv @ params["b"] / (params["std"] ** 2)
 
-    def select_arm(self, x: Optional[np.ndarray] = None) -> list[str]:
-        """腕の選択
-
-        Args:
-            x (Optional[np.ndarray], optional): contexts. Defaults to None.
-
-        Returns:
-            list[str]: 腕IDのリスト
-        """
+    def __get_score__(self, x: Optional[np.ndarray] = None) -> list[float]:
         params = self.parameter["common"]
-        index = np.argsort(
-            [
-                min(
-                    self.item_vectors[a] @ params["mu"]
-                    + self.alpha
-                    * np.sqrt(
-                        self.item_vectors[a] @ params["Sigma"] @ self.item_vectors[a]
-                    ),
-                    1,
-                )
-                for a in self.arm_ids
-            ]
-        )[::-1]
-        return [self.arm_ids[i] for i in index[: self.K]]
+        return [
+            min(
+                self.item_vectors[a] @ params["mu"]
+                + self.alpha
+                * np.sqrt(
+                    self.item_vectors[a] @ params["Sigma"] @ self.item_vectors[a]
+                ),
+                1,
+            )
+            for a in self.arm_ids
+        ]

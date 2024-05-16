@@ -32,20 +32,9 @@ class BernoulliTS(BanditBase):
             # 報酬0の個数
             params[arm_id]["beta"] += row["size"] - row["sum"]
 
-    def select_arm(self, x: Optional[np.ndarray] = None) -> str:
-        """腕の選択
-
-        Args:
-            x (Optional[np.ndarray], optional): 使わない. Defaults to None.
-
-        Returns:
-            str: 腕ID
-        """
+    def __get_score__(self, x: Optional[np.ndarray] = None) -> list[float]:
         params = self.parameter["arms"]
-        index = np.argmax(
-            [
-                np.random.beta(params[arm_id]["alpha"], params[arm_id]["beta"])
-                for arm_id in self.arm_ids
-            ]
-        )
-        return self.arm_ids[index]
+        return [
+            np.random.beta(params[arm_id]["alpha"], params[arm_id]["beta"])
+            for arm_id in self.arm_ids
+        ]

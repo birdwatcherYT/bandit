@@ -5,25 +5,29 @@ from tqdm import tqdm
 
 from bandit.cascade_ucb import CascadeUCB
 from bandit.cascade_klucb import CascadeKLUCB
-from bandit.bandit_base.cascading_bandit import CascadingBanditBase
+from bandit.bandit_base.bandit import BanditBase
+
+K = 10
 
 
 def get_batch(
-    bandit: CascadingBanditBase, true_prob: dict[str, float], batch_size: int
+    bandit: BanditBase, true_prob: dict[str, float], batch_size: int
 ) -> pd.DataFrame:
     # 学習データ
     log = []
     sorted_true_prob = np.array(sorted(true_prob.values())[::-1])
     for _ in range(batch_size):
-        order = bandit.select_arm()
-        clicked = None
+        order = bandit.select_arm(top_k=K)
         # maxobj = 1 - np.prod(1 - sorted_true_prob[: len(order)])
         # obj = 1 - np.prod([1 - true_prob[a] for a in order])
         maxobj = -np.log(1 - sorted_true_prob[: len(order)]).sum()
         obj = -np.log([1 - true_prob[a] for a in order]).sum()
+
+        clicked = []
         for a in order:
-            if clicked is None and np.random.binomial(1, true_prob[a]):
-                clicked = a
+            if np.random.binomial(1, true_prob[a]):
+                # NOTE: 論文では初回クリックしたらそれ以降は見ないという仮定だった
+                clicked = [a]
                 break
         log.append(
             {
@@ -37,15 +41,14 @@ def get_batch(
 
 batch_size = 1
 item_num = 20
-K = 10
 item_ids = [f"arm{i}" for i in range(item_num)]
 true_prob = {a: np.random.rand() for a in item_ids}
 print(true_prob)
 
 report = {}
 for bandit in [
-    CascadeUCB(item_ids, K),
-    CascadeKLUCB(item_ids, K),
+    CascadeUCB(item_ids, alpha=1.5),
+    CascadeKLUCB(item_ids),
 ]:
     name = bandit.__class__.__name__
     print(name)

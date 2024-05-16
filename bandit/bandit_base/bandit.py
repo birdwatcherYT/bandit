@@ -45,13 +45,33 @@ class BanditBase(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def select_arm(self, x: Optional[np.ndarray] = None) -> Union[str, list[str]]:
-        """腕の選択
+    def __get_score__(self, x: Optional[np.ndarray] = None) -> list[float]:
+        """全腕に対応するスコアを取得
 
         Args:
             x (Optional[np.ndarray], optional): 特徴ベクトル. Defaults to None.
 
         Returns:
-            Union[str, list[str]]: 腕ID
+            list[float]: 腕のスコア
         """
         raise NotImplementedError()
+
+    def select_arm(
+        self, x: Optional[np.ndarray] = None, top_k: Optional[int] = None
+    ) -> Union[str, list[str]]:
+        """腕の選択
+
+        Args:
+            x (Optional[np.ndarray], optional): 特徴ベクトル. Defaults to None.
+            top_k (Optional[int], optional): . Defaults to None.
+
+        Returns:
+            Union[str, list[str]]: 腕ID / 評価値が高い順に腕IDのリストを返す
+        """
+        score = self.__get_score__(x)
+        if top_k is None:
+            # 上位1件のみを返す
+            return self.arm_ids[np.argmax(score)]
+        # top_k個を返す
+        # NOTE: 降順にするためマイナスをつける
+        return [self.arm_ids[i] for i in np.argsort(-np.array(score))[:top_k]]

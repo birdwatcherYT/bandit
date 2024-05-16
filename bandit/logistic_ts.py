@@ -8,49 +8,7 @@ import warnings
 from typing import Callable, Optional
 
 from .bandit_base.contextual_bandit import ContextualBanditBase
-
-
-def gradient_descent(
-    obj: Callable[[np.ndarray], float],
-    grad: Callable[[np.ndarray], np.ndarray],
-    x0: np.ndarray,
-    max_iter: int = 10000,
-    eps: float = 1e-12,
-    decay: float = 0.5,
-    hess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
-) -> np.ndarray:
-    """勾配法（最急降下法、ニュートン法）
-
-    Args:
-        obj (Callable[[np.ndarray], float]): 目的関数
-        grad (Callable[[np.ndarray], np.ndarray]): 勾配
-        x0 (np.ndarray): 初期解
-        max_iter (int, optional): 最大ループ数. Defaults to 10000.
-        eps (float, optional): 精度. Defaults to 1e-12.
-        decay (float, optional): ラインサーチ時の減少係数. Defaults to 0.1.
-        hess (Optional[Callable[[np.ndarray], np.ndarray]], optional): ヘシアン. ニュートン法になる. Defaults to None.
-
-    Returns:
-        np.ndarray: _description_
-    """
-    x = np.copy(x0)
-    minimum = obj(x0)
-    for i in range(max_iter):
-        d = -grad(x)
-        if hess is not None:
-            d = np.dot(np.linalg.inv(hess(x)), d)
-        # ラインサーチ
-        alpha = 1
-        o = obj(x + alpha * d)
-        while alpha > eps and o >= minimum:
-            alpha *= decay
-            o = obj(x + alpha * d)
-        minimum = o
-        if alpha * np.mean(np.abs(d)) <= eps:
-            return x
-        x += alpha * d
-    warnings.warn("not convergence")
-    return x
+from .tools import gradient_descent
 
 
 class LogisticTS(ContextualBanditBase):
@@ -115,31 +73,20 @@ class LogisticTS(ContextualBanditBase):
             params[arm_id]["mu"] = theta_map
             params[arm_id]["Sigma"] = np.linalg.inv(hess_map)
 
-    def select_arm(self, x: Optional[np.ndarray] = None) -> str:
-        """腕の選択
-
-        Args:
-            x (Optional[np.ndarray], optional): contexts. Defaults to None.
-
-        Returns:
-            str: 腕ID
-        """
+    def __get_score__(self, x: Optional[np.ndarray] = None) -> list[float]:
         x_transform = self.context_transform(x)
         if self.intercept:
             x_transform = np.concatenate([x_transform, [1]])
         params = self.parameter["arms"]
-        index = np.argmax(
-            [
-                np.dot(
-                    x_transform,
-                    np.random.multivariate_normal(
-                        params[arm_id]["mu"], params[arm_id]["Sigma"]
-                    ),
-                )
-                for arm_id in self.arm_ids
-            ]
-        )
-        return self.arm_ids[index]
+        return [
+            np.dot(
+                x_transform,
+                np.random.multivariate_normal(
+                    params[arm_id]["mu"], params[arm_id]["Sigma"]
+                ),
+            )
+            for arm_id in self.arm_ids
+        ]
 
     @classmethod
     def objective(

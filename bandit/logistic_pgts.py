@@ -70,25 +70,14 @@ class LogisticPGTS(ContextualBanditBase):
             params[arm_id]["Binv"] = Vinv
             params[arm_id]["b"] = m
 
-    def select_arm(self, x: Optional[np.ndarray] = None) -> str:
-        """腕の選択
-
-        Args:
-            x (Optional[np.ndarray], optional): contexts. Defaults to None.
-
-        Returns:
-            str: 腕ID
-        """
+    def __get_score__(self, x: Optional[np.ndarray] = None) -> list[float]:
         x_transform = self.context_transform(x)
         if self.intercept:
             x_transform = np.concatenate([x_transform, [1]])
         params = self.parameter["arms"]
-        index = np.argmax(
-            [
-                x_transform @
-                # params[arm_id]["theta"]
-                np.random.multivariate_normal(params[arm_id]["b"], params[arm_id]["B"])
-                for arm_id in self.arm_ids
-            ]
-        )
-        return self.arm_ids[index]
+        return [
+            x_transform @
+            # params[arm_id]["theta"]
+            np.random.multivariate_normal(params[arm_id]["b"], params[arm_id]["B"])
+            for arm_id in self.arm_ids
+        ]

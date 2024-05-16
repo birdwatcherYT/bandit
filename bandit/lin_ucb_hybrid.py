@@ -90,48 +90,37 @@ class LinUCBHybrid(ContextualBanditBase):
             Ainv = params[arm_id]["Ainv"]
             params[arm_id]["theta"] = Ainv @ (b - B @ beta)
 
-    def select_arm(self, x: Optional[np.ndarray] = None) -> str:
-        """腕の選択
-
-        Args:
-            x (Optional[np.ndarray], optional): contexts. Defaults to None.
-
-        Returns:
-            str: 腕ID
-        """
+    def __get_score__(self, x: Optional[np.ndarray] = None) -> list[float]:
         x_transform = self.context_transform(x)
         if self.intercept:
             x_transform = np.concatenate([x_transform, [1]])
         params = self.parameter["arms"]
         beta = self.parameter["common"]["beta"]
         A0inv = self.parameter["common"]["A0inv"]
-        index = np.argmax(
-            [
-                (x_transform @ beta)
-                + (x_transform @ params[arm_id]["theta"])
-                + self.alpha
-                * np.sqrt(
-                    x_transform @ A0inv @ x_transform
-                    - 2
-                    * (
-                        x_transform
-                        @ A0inv
-                        @ params[arm_id]["B"].T
-                        @ params[arm_id]["Ainv"]
-                        @ x_transform
-                    )
-                    + x_transform @ params[arm_id]["Ainv"] @ x_transform
-                    + (
-                        x_transform
-                        @ params[arm_id]["Ainv"]
-                        @ params[arm_id]["B"]
-                        @ A0inv
-                        @ params[arm_id]["B"].T
-                        @ params[arm_id]["Ainv"]
-                        @ x_transform
-                    )
+        return [
+            (x_transform @ beta)
+            + (x_transform @ params[arm_id]["theta"])
+            + self.alpha
+            * np.sqrt(
+                x_transform @ A0inv @ x_transform
+                - 2
+                * (
+                    x_transform
+                    @ A0inv
+                    @ params[arm_id]["B"].T
+                    @ params[arm_id]["Ainv"]
+                    @ x_transform
                 )
-                for arm_id in self.arm_ids
-            ]
-        )
-        return self.arm_ids[index]
+                + x_transform @ params[arm_id]["Ainv"] @ x_transform
+                + (
+                    x_transform
+                    @ params[arm_id]["Ainv"]
+                    @ params[arm_id]["B"]
+                    @ A0inv
+                    @ params[arm_id]["B"].T
+                    @ params[arm_id]["Ainv"]
+                    @ x_transform
+                )
+            )
+            for arm_id in self.arm_ids
+        ]

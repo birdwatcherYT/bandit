@@ -6,6 +6,7 @@ from tqdm import tqdm
 from bandit.epsilon_greedy import EpsilonGreedy
 from bandit.bernoulli_ts import BernoulliTS
 from bandit.ucb import UCB
+from bandit.klucb import KLUCB
 from bandit.bandit_base.bandit import BanditBase
 
 
@@ -37,7 +38,8 @@ print(true_prob)
 report = {}
 for bandit in [
     BernoulliTS(arm_ids),
-    UCB(arm_ids),
+    UCB(arm_ids, alpha=2),
+    KLUCB(arm_ids),
     EpsilonGreedy(arm_ids, epsilon=0.01),
 ]:
     name = bandit.__class__.__name__

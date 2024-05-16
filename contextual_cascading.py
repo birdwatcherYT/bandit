@@ -8,29 +8,35 @@ from bandit.cascade_ucb import CascadeUCB
 from bandit.cascade_klucb import CascadeKLUCB
 from bandit.cascade_lin_ts import CascadeLinTS
 from bandit.cascade_lin_ucb import CascadeLinUCB
-from bandit.bandit_base.contextual_cascading_bandit import ContextualCascadingBanditBase
+from bandit.bandit_base.bandit import BanditBase
+
+K = 10
 
 
 def get_batch(
-    bandit: ContextualCascadingBanditBase,
+    bandit: BanditBase,
     true_theta: np.ndarray,
     item_vectors: dict[str, float],
     batch_size: int,
 ) -> pd.DataFrame:
     # 学習データ
     log = []
-    sorted_true_prob = np.array(sorted([expit(x @ true_theta) for x in item_vectors.values()])[::-1])
+    sorted_true_prob = np.array(
+        sorted([expit(x @ true_theta) for x in item_vectors.values()])[::-1]
+    )
     for _ in range(batch_size):
-        order = bandit.select_arm()
-        clicked = None
+        order = bandit.select_arm(top_k=K)
         # maxobj = 1 - np.prod(1 - sorted_true_prob[: len(order)])
         # obj = 1 - np.prod([1 - expit(true_theta @ item_vectors[a]) for a in order])
         maxobj = -np.log(1 - sorted_true_prob[: len(order)]).sum()
         obj = -np.log([1 - expit(true_theta @ item_vectors[a]) for a in order]).sum()
+
+        clicked = []
         for a in order:
             prob = expit(true_theta @ item_vectors[a])
-            if clicked is None and np.random.binomial(1, prob):
-                clicked = a
+            if np.random.binomial(1, prob):
+                # NOTE: 論文では初回クリックしたらそれ以降は見ないという仮定だった
+                clicked = [a]
                 break
         log.append(
             {
@@ -45,7 +51,6 @@ def get_batch(
 batch_size = 1
 item_num = 20
 feature_num = 5
-K = 10
 item_ids = [f"arm{i}" for i in range(item_num)]
 true_theta = np.random.normal(size=feature_num)
 print(true_theta)
@@ -53,10 +58,10 @@ item_vectors = {f"arm{i}": np.random.normal(size=feature_num) for i in range(ite
 
 report = {}
 for bandit in [
-    CascadeLinTS(item_ids, K, item_vectors),
-    CascadeLinUCB(item_ids, K, item_vectors, alpha=1),
-    CascadeUCB(item_ids, K),
-    CascadeKLUCB(item_ids, K),
+    CascadeLinTS(item_ids, item_vectors),
+    CascadeLinUCB(item_ids, item_vectors, alpha=1),
+    CascadeUCB(item_ids, alpha=1.5),
+    CascadeKLUCB(item_ids),
 ]:
     name = bandit.__class__.__name__
     print(name)
