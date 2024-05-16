@@ -60,7 +60,7 @@ report = {}
 for bandit in [
     CascadeLinTS(item_ids, item_vectors),
     CascadeLinUCB(item_ids, item_vectors, alpha=1),
-    CascadeUCB(item_ids),
+    CascadeUCB(item_ids, alpha=1.5),
     CascadeKLUCB(item_ids),
 ]:
     name = bandit.__class__.__name__
