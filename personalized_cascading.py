@@ -12,10 +12,9 @@ from bandit.lin_ts import LinTS
 from bandit.lin_ucb import LinUCB
 from bandit.bandit_base.bandit import BanditBase
 
-K = 10
-
 
 def get_batch(
+    top_k: int,
     bandit: BanditBase,
     true_theta: np.ndarray,
     features: list[str],
@@ -25,7 +24,7 @@ def get_batch(
     log = []
     for _ in range(batch_size):
         x = np.random.rand(len(features))
-        order = bandit.select_arm(x, top_k=K)
+        order = bandit.select_arm(x, top_k=top_k)
         true_prob = {a: expit(theta @ x) for a, theta in true_theta.items()}
         sorted_true_prob = np.array(sorted(true_prob.values())[::-1])
         maxobj = -np.log(1 - sorted_true_prob[: len(order)]).sum()
@@ -44,6 +43,7 @@ def get_batch(
 
 
 def expand_cascade_data(
+    init_k: int,
     reward_df: pd.DataFrame,
     only_first_click: bool,
     features: Optional[list[str]] = None,
@@ -51,6 +51,7 @@ def expand_cascade_data(
     """cascading bandit から contextual banditで扱うデータ形式に変換する
 
     Args:
+        init_k (int): 初期でユーザーに見えているアイテムの個数
         reward_df (pd.DataFrame): cascading banditで扱っているデータ形式。"order", "clicked"を含む
         only_first_click (bool): True: 最初のクリックまでを見る。False: 最後のクリックまでを見る
         features (Optional[list[str]]): 特徴名のリスト
@@ -63,28 +64,35 @@ def expand_cascade_data(
         assert isinstance(row["clicked"], list)
         clicked = set(row["clicked"])
         clicked_num = len(clicked)
-        for observed in row["order"]:
+        current_click_num = 0
+        for j, observed in enumerate(row["order"]):
             reward = int(observed in clicked)
             feature_info = row[features].to_dict() if features is not None else {}
             records.append({"reward": reward, "arm_id": observed} | feature_info)
             if reward:
-                clicked_num -= 1
-                if only_first_click or clicked_num == 0:
+                current_click_num += 1
+                if only_first_click or clicked_num == current_click_num:
                     # 最初のクリックのみを見る場合 or 最後のクリックなら
                     break
+            elif clicked_num == 0 and j + 1 == init_k:
+                # クリックされていない場合は初期提示までで止める
+                break
     return pd.DataFrame(records)
 
 
 batch_size = 10
-arm_num = 20
+arm_num = 20  # アイテム数
+top_k = 10
+init_k = 5
+
 feature_num = 5
 intercept = False
 arm_ids = [f"arm{i}" for i in range(arm_num)]
 features = [f"feat{i}" for i in range(feature_num)]
 true_theta = {a: np.random.normal(size=feature_num) for a in arm_ids}
 print(true_theta)
-# only_first_click = True
-only_first_click = False
+# only_first_click = True  # 最初のクリックまでを見る場合
+only_first_click = False  # 最後のクリックまで見る場合
 
 report = {}
 
@@ -100,10 +108,10 @@ for bandit in [
     regret_log = []
     cumsum_regret = 0
     for i in tqdm(range(1000)):
-        reward_df = get_batch(bandit, true_theta, features, batch_size)
+        reward_df = get_batch(top_k, bandit, true_theta, features, batch_size)
         cumsum_regret += reward_df["regret"].sum()
         regret_log.append(cumsum_regret)
-        bandit.train(expand_cascade_data(reward_df, only_first_click, features))
+        bandit.train(expand_cascade_data(init_k, reward_df, only_first_click, features))
     report[name] = regret_log
 pd.DataFrame(report).plot()
 plt.xlabel("Batch Iteration")
