@@ -18,7 +18,7 @@ class UCB(BanditBase):
         super().__init__(arm_ids, initial_parameter)
 
     def common_parameter(self) -> dict[str, Any]:
-        return {}
+        return {"total_count": 0}
 
     def arm_parameter(self) -> dict[str, Any]:
         return {"sum": 0, "count": 0}
@@ -30,6 +30,7 @@ class UCB(BanditBase):
             reward_df (pd.DataFrame): 報酬のログ。"arm_id"と"reward"列が必要。
         """
         params = self.parameter["arms"]
+        self.parameter["common"]["total_count"] += reward_df.shape[0]
         diff = reward_df.groupby("arm_id")["reward"].agg(["sum", "size"])
         for arm_id, row in diff.iterrows():
             params[arm_id]["sum"] += row["sum"]
@@ -37,7 +38,7 @@ class UCB(BanditBase):
 
     def __get_score__(self, x: Optional[np.ndarray] = None) -> list[float]:
         params = self.parameter["arms"]
-        total_count = np.sum([params[arm_id]["count"] for arm_id in self.arm_ids])
+        total_count = self.parameter["common"]["total_count"]
         return [
             (
                 params[arm_id]["sum"] / params[arm_id]["count"]

@@ -11,7 +11,7 @@ from .tools import newton_method
 
 class KLUCB(BanditBase):
     def common_parameter(self) -> dict[str, Any]:
-        return {}
+        return {"total_count": 0}
 
     def arm_parameter(self) -> dict[str, Any]:
         return {"sum": 0, "count": 0, "klucb": 0}
@@ -23,12 +23,17 @@ class KLUCB(BanditBase):
             reward_df (pd.DataFrame): 報酬のログ。どのアイテムがクリックされたかが記載された"clicked"列、そのときの順序が記載された"order"列が必要
         """
         params = self.parameter["arms"]
+        self.parameter["common"]["total_count"] += reward_df.shape[0]
         diff = reward_df.groupby("arm_id")["reward"].agg(["sum", "size"])
         for arm_id, row in diff.iterrows():
             params[arm_id]["sum"] += row["sum"]
             params[arm_id]["count"] += row["size"]
 
-        total_count = np.sum([params[arm_id]["count"] for arm_id in self.arm_ids])
+        self.optimize()
+
+    def optimize(self):
+        params = self.parameter["arms"]
+        total_count = self.parameter["common"]["total_count"]
         for arm_id in self.arm_ids:
             if params[arm_id]["count"] == 0 or params[arm_id]["sum"] == 0:
                 params[arm_id]["klucb"] = 1

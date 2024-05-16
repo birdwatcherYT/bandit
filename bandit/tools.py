@@ -1,9 +1,6 @@
 from typing import Optional
-import pandas as pd
-from typing import Optional
 
 import numpy as np
-import pandas as pd
 import warnings
 from typing import Callable, Optional
 
@@ -86,35 +83,3 @@ def newton_method(
         x += d
     warnings.warn("not convergence")
     return x
-
-
-def expand_cascade_data(
-    reward_df: pd.DataFrame,
-    only_first_click: bool,
-    features: Optional[list[str]] = None,
-) -> pd.DataFrame:
-    """cascading bandit から contextual banditで扱うデータ形式に変換する
-
-    Args:
-        reward_df (pd.DataFrame): cascading banditで扱っているデータ形式。"order", "clicked"を含む
-        only_first_click (bool): True: 最初のクリックまでを見る。False: 最後のクリックまでを見る
-        features (Optional[list[str]]): 特徴名のリスト
-
-    Returns:
-        pd.DataFrame: 変換後のデータ形式。"reward", "arm_id"が含まれる。
-    """
-    records = []
-    for i, row in reward_df.iterrows():
-        assert isinstance(row["clicked"], list)
-        clicked = set(row["clicked"])
-        clicked_num = len(clicked)
-        for observed in row["order"]:
-            reward = int(observed in clicked)
-            feature_info = row[features].to_dict() if features is not None else {}
-            records.append({"reward": reward, "arm_id": observed} | feature_info)
-            if reward:
-                clicked_num -= 1
-                if only_first_click or clicked_num == 0:
-                    # 最初のクリックのみを見る場合 or 最後のクリックなら
-                    break
-    return pd.DataFrame(records)

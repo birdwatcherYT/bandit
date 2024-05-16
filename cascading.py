@@ -3,10 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from bandit.ucb import UCB
-from bandit.klucb import KLUCB
+from bandit.cascade_ucb import CascadeUCB
+from bandit.cascade_klucb import CascadeKLUCB
 from bandit.bandit_base.bandit import BanditBase
-from bandit.tools import expand_cascade_data
 
 K = 10
 
@@ -48,8 +47,8 @@ print(true_prob)
 
 report = {}
 for bandit in [
-    UCB(item_ids, alpha=1.5),
-    KLUCB(item_ids),
+    CascadeUCB(item_ids, alpha=1.5),
+    CascadeKLUCB(item_ids),
 ]:
     name = bandit.__class__.__name__
     print(name)
@@ -59,7 +58,7 @@ for bandit in [
         reward_df = get_batch(bandit, true_prob, batch_size)
         cumsum_regret += reward_df["regret"].sum()
         regret_log.append(cumsum_regret)
-        bandit.train(expand_cascade_data(reward_df, True))
+        bandit.train(reward_df)
     report[name] = regret_log
 pd.DataFrame(report).plot()
 plt.xlabel("Batch Iteration")

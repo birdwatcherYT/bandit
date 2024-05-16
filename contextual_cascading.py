@@ -4,13 +4,11 @@ import matplotlib.pyplot as plt
 from scipy.special import expit
 from tqdm import tqdm
 
-from bandit.ucb import UCB
-from bandit.klucb import KLUCB
+from bandit.cascade_ucb import CascadeUCB
+from bandit.cascade_klucb import CascadeKLUCB
 from bandit.cascade_lin_ts import CascadeLinTS
 from bandit.cascade_lin_ucb import CascadeLinUCB
 from bandit.bandit_base.bandit import BanditBase
-from bandit.bandit_base.contextual_cascading_bandit import ContextualCascadingBanditBase
-from bandit.tools import expand_cascade_data
 
 K = 10
 
@@ -62,8 +60,8 @@ report = {}
 for bandit in [
     CascadeLinTS(item_ids, item_vectors),
     CascadeLinUCB(item_ids, item_vectors, alpha=1),
-    UCB(item_ids),
-    KLUCB(item_ids),
+    CascadeUCB(item_ids),
+    CascadeKLUCB(item_ids),
 ]:
     name = bandit.__class__.__name__
     print(name)
@@ -73,10 +71,7 @@ for bandit in [
         reward_df = get_batch(bandit, true_theta, item_vectors, batch_size)
         cumsum_regret += reward_df["regret"].sum()
         regret_log.append(cumsum_regret)
-        if isinstance(bandit, ContextualCascadingBanditBase):
-            bandit.train(reward_df)
-        else:
-            bandit.train(expand_cascade_data(reward_df, True))
+        bandit.train(reward_df)
     report[name] = regret_log
 pd.DataFrame(report).plot()
 plt.xlabel("Batch Iteration")

@@ -3,14 +3,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.special import expit
 from tqdm import tqdm
+from typing import Optional
 
-from bandit.ucb import UCB
 from bandit.logistic_ts import LogisticTS
 from bandit.logistic_pgts import LogisticPGTS
 from bandit.lin_ts import LinTS
 from bandit.lin_ucb import LinUCB
 from bandit.bandit_base.bandit import BanditBase
-from bandit.tools import expand_cascade_data
 
 K = 10
 
@@ -43,6 +42,38 @@ def get_batch(
     return pd.DataFrame(log)
 
 
+def expand_cascade_data(
+    reward_df: pd.DataFrame,
+    only_first_click: bool,
+    features: Optional[list[str]] = None,
+) -> pd.DataFrame:
+    """cascading bandit から contextual banditで扱うデータ形式に変換する
+
+    Args:
+        reward_df (pd.DataFrame): cascading banditで扱っているデータ形式。"order", "clicked"を含む
+        only_first_click (bool): True: 最初のクリックまでを見る。False: 最後のクリックまでを見る
+        features (Optional[list[str]]): 特徴名のリスト
+
+    Returns:
+        pd.DataFrame: 変換後のデータ形式。"reward", "arm_id"が含まれる。
+    """
+    records = []
+    for i, row in reward_df.iterrows():
+        assert isinstance(row["clicked"], list)
+        clicked = set(row["clicked"])
+        clicked_num = len(clicked)
+        for observed in row["order"]:
+            reward = int(observed in clicked)
+            feature_info = row[features].to_dict() if features is not None else {}
+            records.append({"reward": reward, "arm_id": observed} | feature_info)
+            if reward:
+                clicked_num -= 1
+                if only_first_click or clicked_num == 0:
+                    # 最初のクリックのみを見る場合 or 最後のクリックなら
+                    break
+    return pd.DataFrame(records)
+
+
 batch_size = 10
 arm_num = 20
 feature_num = 5
@@ -61,7 +92,6 @@ for bandit in [
     LogisticPGTS(arm_ids, features, intercept, M=10),
     LinTS(arm_ids, features, intercept),
     LinUCB(arm_ids, features, intercept, alpha=1),
-    UCB(arm_ids),
 ]:
     name = bandit.__class__.__name__
     print(name)
