@@ -29,31 +29,32 @@ def get_batch(
     return pd.DataFrame(log)
 
 
-batch_size = 1
-arm_num = 5
-arm_ids = [f"arm{i}" for i in range(arm_num)]
-true_prob = {a: np.random.rand() for a in arm_ids}
-print(true_prob)
+if __name__ == "__main__":
+    batch_size = 1
+    arm_num = 5
+    arm_ids = [f"arm{i}" for i in range(arm_num)]
+    true_prob = {a: np.random.rand() for a in arm_ids}
+    print(true_prob)
 
-report = {}
-for bandit in [
-    BernoulliTS(arm_ids),
-    UCB(arm_ids, alpha=2),
-    KLUCB(arm_ids),
-    EpsilonGreedy(arm_ids, epsilon=0.01),
-]:
-    name = bandit.__class__.__name__
-    print(name)
-    regret_log = []
-    cumsum_regret = 0
-    for i in tqdm(range(10000)):
-        reward_df = get_batch(bandit, true_prob, batch_size)
-        cumsum_regret += reward_df["regret"].sum()
-        regret_log.append(cumsum_regret)
-        bandit.train(reward_df)
-    report[name] = regret_log
-pd.DataFrame(report).plot()
-plt.xlabel("Batch Iteration")
-plt.ylabel("Cumulative Regret")
-plt.title(f"Binary Reward Bandit: batch_size={batch_size}, arm_num={arm_num}")
-plt.show()
+    report = {}
+    for bandit in [
+        BernoulliTS(arm_ids),
+        UCB(arm_ids, alpha=2),
+        KLUCB(arm_ids),
+        EpsilonGreedy(arm_ids, epsilon=0.01),
+    ]:
+        name = bandit.__class__.__name__
+        print(name)
+        regret_log = []
+        cumsum_regret = 0
+        for i in tqdm(range(10000)):
+            reward_df = get_batch(bandit, true_prob, batch_size)
+            cumsum_regret += reward_df["regret"].sum()
+            regret_log.append(cumsum_regret)
+            bandit.train(reward_df)
+        report[name] = regret_log
+    pd.DataFrame(report).plot()
+    plt.xlabel("Batch Iteration")
+    plt.ylabel("Cumulative Regret")
+    plt.title(f"Binary Reward Bandit: batch_size={batch_size}, arm_num={arm_num}")
+    plt.show()

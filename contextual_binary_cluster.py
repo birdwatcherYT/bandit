@@ -38,57 +38,61 @@ def get_batch(
     return pd.DataFrame(log)
 
 
-batch_size = 100
-arm_num = 5
-feature_num = 10
-intercept = True
-# intercept = False
+if __name__ == "__main__":
 
-onehot_maxprob = 0.5
-onehot_minprob = 0.2
-onehot = True
-# onehot = False
+    batch_size = 100
+    arm_num = 5
+    feature_num = 10
+    intercept = True
+    # intercept = False
 
-cluster_num = arm_num if onehot else 4
-arm_ids = [f"arm{i}" for i in range(arm_num)]
-features = [f"feat{i}" for i in range(feature_num)]
-centroid = np.array([np.random.rand(feature_num) for i in range(cluster_num)])
-true_prob = [
-    {
-        a: (onehot_maxprob if (k == i) else onehot_minprob)
-        if onehot
-        else np.random.rand()
-        for k, a in enumerate(arm_ids)
-    }
-    for i in range(cluster_num)
-]
-print(true_prob)
+    onehot_maxprob = 0.5
+    onehot_minprob = 0.2
+    onehot = True
+    # onehot = False
 
-report = {}
-for bandit in [
-    LogisticTS(arm_ids, features, intercept),
-    LogisticPGTS(arm_ids, features, intercept, M=10),
-    LinTS(arm_ids, features, intercept),
-    LinUCB(arm_ids, features, intercept, alpha=1),
-    BernoulliTS(arm_ids),
-]:
-    name = bandit.__class__.__name__
-    print(name)
-    regret_log = []
-    cumsum_regret = 0
-    for i in tqdm(range(100)):
-        reward_df = get_batch(bandit, true_prob, centroid, features, batch_size)
-        cumsum_regret += reward_df["regret"].sum()
-        regret_log.append(cumsum_regret)
-        bandit.train(reward_df)
-    report[name] = regret_log
+    cluster_num = arm_num if onehot else 4
+    arm_ids = [f"arm{i}" for i in range(arm_num)]
+    features = [f"feat{i}" for i in range(feature_num)]
+    centroid = np.array([np.random.rand(feature_num) for i in range(cluster_num)])
+    true_prob = [
+        {
+            a: (
+                (onehot_maxprob if (k == i) else onehot_minprob)
+                if onehot
+                else np.random.rand()
+            )
+            for k, a in enumerate(arm_ids)
+        }
+        for i in range(cluster_num)
+    ]
+    print(true_prob)
 
-    reward_df = get_batch(bandit, true_prob, centroid, features, 1000)
-    print(reward_df.groupby(["best_arm_id", "arm_id"]).size())
-pd.DataFrame(report).plot()
-plt.xlabel("Batch Iteration")
-plt.ylabel("Cumulative Regret")
-plt.title(
-    f"Contextual Binary Reward Bandit for Clustering data: batch_size={batch_size}, arm_num={arm_num}"
-)
-plt.show()
+    report = {}
+    for bandit in [
+        LogisticTS(arm_ids, features, intercept),
+        LogisticPGTS(arm_ids, features, intercept, M=10),
+        LinTS(arm_ids, features, intercept),
+        LinUCB(arm_ids, features, intercept, alpha=1),
+        BernoulliTS(arm_ids),
+    ]:
+        name = bandit.__class__.__name__
+        print(name)
+        regret_log = []
+        cumsum_regret = 0
+        for i in tqdm(range(100)):
+            reward_df = get_batch(bandit, true_prob, centroid, features, batch_size)
+            cumsum_regret += reward_df["regret"].sum()
+            regret_log.append(cumsum_regret)
+            bandit.train(reward_df)
+        report[name] = regret_log
+
+        reward_df = get_batch(bandit, true_prob, centroid, features, 1000)
+        print(reward_df.groupby(["best_arm_id", "arm_id"]).size())
+    pd.DataFrame(report).plot()
+    plt.xlabel("Batch Iteration")
+    plt.ylabel("Cumulative Regret")
+    plt.title(
+        f"Contextual Binary Reward Bandit for Clustering data: batch_size={batch_size}, arm_num={arm_num}"
+    )
+    plt.show()

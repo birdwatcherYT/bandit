@@ -1,8 +1,12 @@
-from typing import Optional
+from typing import Optional, Union
 
+import pandas as pd
 import numpy as np
 import warnings
 from typing import Callable, Optional
+from sklearn.cluster import KMeans
+
+from .bandit_base.bandit import BanditBase
 
 
 def gradient_descent(
@@ -83,3 +87,29 @@ def newton_method(
         x += d
     warnings.warn("not convergence")
     return x
+
+
+class ClusterBandit:
+    def __init__(
+        self,
+        bandit_models: list[BanditBase],
+        user_contexts: np.ndarray,
+        context_features: list[str],
+    ) -> None:
+        self.num_segment = len(bandit_models)
+        self.kmeans = KMeans(n_clusters=self.num_segment, n_init="auto")
+        self.kmeans.fit(user_contexts)
+        self.bandit_models = bandit_models
+        self.context_features = context_features
+
+    def train(self, reward_df: pd.DataFrame) -> None:
+        segments = self.kmeans.predict(reward_df[self.context_features].to_numpy())
+        for i, bandit in enumerate(self.bandit_models):
+            bandit.train(reward_df.iloc[segments == i])
+
+    def select_arm(
+        self, x: Optional[np.ndarray] = None, top_k: Optional[int] = None
+    ) -> Union[str, list[str]]:
+        segment = self.kmeans.predict([x])[0]
+        bandit = self.bandit_models[segment]
+        return bandit.select_arm(x, top_k)
