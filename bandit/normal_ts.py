@@ -50,7 +50,7 @@ class NormalTS(BanditBase):
             np.random.normal(
                 params[arm_id]["m"],
                 1
-                / (
+                / np.sqrt(
                     params[arm_id]["beta"]
                     * np.random.gamma(params[arm_id]["a"], 1 / params[arm_id]["b"])
                 ),
